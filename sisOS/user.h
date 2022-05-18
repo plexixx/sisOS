@@ -2,7 +2,9 @@ struct stat;
 struct mode; 
 struct rtcdate;
 
-// system calls
+// 用户接口部分，操作系统提供的系统调用API函数
+// 以下都是对于函数原型的声明
+// system calls 系统调用号
 int fork(void);
 int exit(void) __attribute__((noreturn));
 int wait(void);
