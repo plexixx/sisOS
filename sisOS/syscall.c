@@ -46,9 +46,11 @@ fetchstr(uint addr, char **pp)
 }
 
 // Fetch the nth 32-bit system call argument.
+// 获取系统调用的第n个int型的参数，存到ip这个位置
 int
 argint(int n, int *ip)
 {
+    //原栈中获取n个int型参数，加4是跳过返回地址的4字节
   return fetchint((myproc()->tf->esp) + 4 + 4*n, ip);
 }
 
@@ -106,6 +108,7 @@ extern int sys_uptime(void);
 extern int sys_fmode(void);
 extern int sys_fmodif(void);
 
+// 在下面的函数指针数组，将右边函数名填写到左边相对应的索引位置
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
 [SYS_exit]    sys_exit,
@@ -136,10 +139,11 @@ void
 syscall(void)
 {
   int num;
-  struct proc *curproc = myproc();
+  struct proc *curproc = myproc();  //获取当前进程的PCB
 
-  num = curproc->tf->eax;
+  num = curproc->tf->eax;   // 获取系统调用号
   if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {
+      // 调用相应的系统调用处理函数，返回值赋给eax
     curproc->tf->eax = syscalls[num]();
   } else {
     cprintf("%d %s: unknown sys call %d\n",
