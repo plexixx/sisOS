@@ -32,15 +32,17 @@ idtinit(void)
   lidt(idt, sizeof(idt));
 }
 
+// 总的中断程序
 //PAGEBREAK: 41
 void
 trap(struct trapframe *tf)
 {
-  if(tf->trapno == T_SYSCALL){
+    //如果中断栈帧tf的向量号表示的是系统调用号的话
+  if(tf->trapno == T_SYSCALL){  
     if(myproc()->killed)
       exit();
-    myproc()->tf = tf;
-    syscall();
+    myproc()->tf = tf;  
+    syscall();  // 执行系统调用入口程序
     if(myproc()->killed)
       exit();
     return;

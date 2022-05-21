@@ -9,3 +9,8 @@ struct stat {
   short nlink; // Number of links to file
   uint size;   // Size of file in bytes
 };
+
+struct mode {
+	int readable; // readable = 0 isn't readable ; = 1 is readable
+	int writable;
+};

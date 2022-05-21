@@ -204,6 +204,7 @@ ialloc(uint dev, short type)
     if(dip->type == 0){  // a free inode
       memset(dip, 0, sizeof(*dip));
       dip->type = type;
+      dip->writable = 1;
       log_write(bp);   // mark it allocated on the disk
       brelse(bp);
       return iget(dev, inum);
@@ -230,6 +231,8 @@ iupdate(struct inode *ip)
   dip->minor = ip->minor;
   dip->nlink = ip->nlink;
   dip->size = ip->size;
+  dip->readable = ip->readable;
+  dip->writable = ip->writable;
   memmove(dip->addrs, ip->addrs, sizeof(ip->addrs));
   log_write(bp);
   brelse(bp);
@@ -266,6 +269,8 @@ iget(uint dev, uint inum)
   ip->inum = inum;
   ip->ref = 1;
   ip->valid = 0;
+  ip->readable = 1;
+  ip->writable = 1;
   release(&icache.lock);
 
   return ip;
@@ -303,6 +308,8 @@ ilock(struct inode *ip)
     ip->minor = dip->minor;
     ip->nlink = dip->nlink;
     ip->size = dip->size;
+    ip->readable = dip->readable;
+    ip->writable = dip->writable;
     memmove(ip->addrs, dip->addrs, sizeof(ip->addrs));
     brelse(bp);
     ip->valid = 1;
@@ -446,6 +453,13 @@ stati(struct inode *ip, struct stat *st)
   st->size = ip->size;
 }
 
+void
+modei(struct inode *ip, struct mode *md)
+{
+  md->readable = ip->readable;
+  md->writable = ip->writable;
+}
+
 //PAGEBREAK!
 // Read data from inode.
 // Caller must hold ip->lock.
@@ -493,6 +507,8 @@ writei(struct inode *ip, char *src, uint off, uint n)
   if(off > ip->size || off + n < off)
     return -1;
   if(off + n > MAXFILE*BSIZE)
+    return -1;
+  if(ip->type == T_FILE && ip->writable != 1)
     return -1;
 
   for(tot=0; tot<n; tot+=m, off+=m, src+=m){

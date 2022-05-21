@@ -114,6 +114,28 @@ sys_fstat(void)
   return filestat(f, st);
 }
 
+int
+sys_fmode(void)
+{
+  struct file *f;
+  struct mode *md;
+
+  if(argfd(0, 0, &f) < 0 || argptr(1, (void*)&md, sizeof(*md)) < 0) // get the 1st ptr whose size and type is listed in the 3rd & 2nd argument 
+    return -1;
+  return filemode(f, md); // 把读写权限信息赋到md指向的结构体上。 
+}
+
+int
+sys_fmodif(void)
+{
+  struct file *f;
+  int rank;
+
+  if(argfd(0, 0, &f) < 0 || argptr(1, (void *)&rank, sizeof(int)) < 0)
+    return -1;
+  return filemodif(f, rank);
+}
+
 // Create the path new as a link to the same inode as old.
 int
 sys_link(void)
