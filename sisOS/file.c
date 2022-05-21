@@ -9,7 +9,6 @@
 #include "spinlock.h"
 #include "sleeplock.h"
 #include "file.h"
-#include "stat.h"
 
 struct devsw devsw[NDEV];
 struct {
@@ -93,65 +92,13 @@ filestat(struct file *f, struct stat *st)
   return -1;
 }
 
-// Get readable msg about file f.
-int
-filemode(struct file *f, struct mode *md)
-{
-  if(f->type == FD_INODE){
-    ilock(f->ip);
-    modei(f->ip,md);
-    iunlock(f->ip);
-    return 0;
-  }
-  return -1;
-}
-
-// modify permission msg about file f.
-int
-filemodif(struct file *f, int rank)
-{
-  if(f->type == FD_INODE){
-    //acquire(&ftable.lock);
-	  
-    switch(rank){
-		case 2: 
-			f->ip->readable = 2;
-			f->ip->writable = 1;	
-			break;	
-		case 4:	
-			f->ip->readable = 1;					
-			f->ip->writable = 2;	
-			break;	
-		case 6:	
-			f->ip->readable = 1;					
-			f->ip->writable = 1;	
-			break;	
-		default:	
-			panic("filemodif: illegal rank msg!\n");	
-			break;
-	}
-    begin_op();
-    iupdate(f->ip);
-    end_op();
-    //release(&ftable.lock);
-
-    return 0;
-  }
-  return -1;
-}
-
 // Read from file f.
 int
 fileread(struct file *f, char *addr, int n)
 {
   int r;
-  struct mode md;
 
-  ilock(f->ip);
-  modei(f->ip,&md);
-  iunlock(f->ip);
-
-  if(md.readable == 2)
+  if(f->readable == 0)
     return -1;
   if(f->type == FD_PIPE)
     return piperead(f->pipe, addr, n);
@@ -171,13 +118,8 @@ int
 filewrite(struct file *f, char *addr, int n)
 {
   int r;
-  struct mode md;
 
-  ilock(f->ip);
-  modei(f->ip,&md);
-  iunlock(f->ip);
-
-  if(md.writable == 0)
+  if(f->writable == 0)
     return -1;
   if(f->type == FD_PIPE)
     return pipewrite(f->pipe, addr, n);
@@ -212,3 +154,4 @@ filewrite(struct file *f, char *addr, int n)
   }
   panic("filewrite");
 }
+

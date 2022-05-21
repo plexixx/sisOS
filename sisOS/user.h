@@ -1,10 +1,7 @@
 struct stat;
-struct mode; 
 struct rtcdate;
 
-// 用户接口部分，操作系统提供的系统调用API函数
-// 以下都是对于函数原型的声明，定义在usys.S中
-// system calls 系统调用号
+// system calls
 int fork(void);
 int exit(void) __attribute__((noreturn));
 int wait(void);
@@ -26,8 +23,8 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
-int fmode(int fd, struct mode*);
-int fmodif(int fd, int rank);
+int changePriority(int, int);
+int showProcess(void);
 
 // ulib.c
 int stat(const char*, struct stat*);

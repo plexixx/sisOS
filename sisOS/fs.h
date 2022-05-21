@@ -31,10 +31,8 @@ struct dinode {
   short major;          // Major device number (T_DEV only)
   short minor;          // Minor device number (T_DEV only)
   short nlink;          // Number of links to inode in file system
-  int readable;
-  int writable;
   uint size;            // Size of file (bytes)
-  uint addrs[NDIRECT+15];   // Data block addresses
+  uint addrs[NDIRECT+1];   // Data block addresses
 };
 
 // Inodes per block.

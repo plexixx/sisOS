@@ -8,7 +8,6 @@ struct rtcdate;
 struct spinlock;
 struct sleeplock;
 struct stat;
-struct mode;
 struct superblock;
 
 // bio.c
@@ -31,8 +30,6 @@ struct file*    filealloc(void);
 void            fileclose(struct file*);
 struct file*    filedup(struct file*);
 void            fileinit(void);
-int             filemode(struct file*, struct mode*);
-int             filemodif(struct file*, int rank);
 int             fileread(struct file*, char*, int n);
 int             filestat(struct file*, struct stat*);
 int             filewrite(struct file*, char*, int n);
@@ -54,7 +51,6 @@ struct inode*   namei(char*);
 struct inode*   nameiparent(char*, char*);
 int             readi(struct inode*, char*, uint, uint);
 void            stati(struct inode*, struct stat*);
-void            modei(struct inode*, struct mode*);
 int             writei(struct inode*, char*, uint, uint);
 
 // ide.c
@@ -124,6 +120,8 @@ void            userinit(void);
 int             wait(void);
 void            wakeup(void*);
 void            yield(void);
+int             changePriority(int, int);
+int             showProcess(void);
 
 // swtch.S
 void            swtch(struct context**, struct context*);
@@ -189,6 +187,7 @@ void            switchuvm(struct proc*);
 void            switchkvm(void);
 int             copyout(pde_t*, uint, void*, uint);
 void            clearpteu(pde_t *pgdir, char *uva);
+
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))

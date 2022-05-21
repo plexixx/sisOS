@@ -9,9 +9,8 @@ cat(int fd)
 {
   int n;
 
-  // 读取文件描述符fd指向的内容
   while((n = read(fd, buf, sizeof(buf))) > 0) {
-    if (write(1, buf, n) != n) {    //输出到屏幕
+    if (write(1, buf, n) != n) {
       printf(1, "cat: write error\n");
       exit();
     }
@@ -31,7 +30,6 @@ main(int argc, char *argv[])
     cat(0);
     exit();
   }
-
 
   for(i = 1; i < argc; i++){
     if((fd = open(argv[i], 0)) < 0){
