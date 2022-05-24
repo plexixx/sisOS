@@ -73,47 +73,43 @@ myproc(void) {
 }
 
 void addRunnable(struct proc *np) {
-  struct proc *p;
-  //cprintf("addRunnalbe!\n");
-  for(p = ptable.rq; p < &ptable.rq[NPROC]; p++) {
-    if(p->state == UNUSED) {
+  int i;
+  for(i = 0; i < NPROC; i++) {
+    if(ptable.rq[i].state == UNUSED) {
       //cprintf("addRunnalbe success!\n");
-      p = np;
+      ptable.rq[i] = *np;
       return;
     }
   }
 }
 
 void addSleep(struct proc *np) {
-  struct proc *p;
-  for(p = ptable.sq; p < &ptable.sq[NPROC]; p++) {
-    if(p->state == UNUSED) {
-      //cprintf("addSleep success!\n");
-      p = np;
+  int i;
+  for(i = 0; i < NPROC; i++) {
+    if(ptable.sq[i].state == UNUSED) {
+      //cprintf("addRunnalbe success!\n");
+      ptable.sq[i] = *np;
       return;
     }
   }
 }
 
 void delRunnable(struct proc *p) {
-  struct proc *rp;
-  //cprintf("delRunnalbe!\n");
-  for(rp = ptable.rq; rp < &ptable.rq[NPROC]; rp++) {
-    if(rp == p) {
-      //cprintf("delRunnalbe success!\n");
-      rp->state = UNUSED;
-      break;
+  int i;
+  for(i = 0; i < NPROC; i++) {
+    if(ptable.rq[i].pid == p->pid) {
+      ptable.rq[i].state = UNUSED;
+      return;
     }
   }
 }
 
 void delSleep(struct proc *p) {
-  struct proc *sp;
-  for(sp = ptable.sq; sp < &ptable.sq[NPROC]; sp++) {
-    if(sp == p) {
-      //cprintf("delSleep success!\n");
-      sp->state = UNUSED;
-      break;
+  int i;
+  for(i = 0; i < NPROC; i++) {
+    if(ptable.sq[i].pid == p->pid) {
+      ptable.sq[i].state = UNUSED;
+      return;
     }
   }
 }
@@ -513,6 +509,7 @@ scheduler(void)
         c->proc = p;
         switchuvm(p);
         p->state = RUNNING;
+        delRunnable(p);
 
         swtch(&(c->scheduler), p->context);
         switchkvm();
@@ -765,15 +762,19 @@ showProcess(int op)
 
     else if(op == 1) {
       for(p = ptable.rq; p < &ptable.rq[NPROC]; p++) {
-        cprintf("%s \t %d \t RUNNABLE \t %d \t\t %d \t\t %d\n", p->name, p->pid, p->priority, p->time, p->remainTime);
-        cprintf("turn:%d\trun:%d\twait:%d\n", p->turnAroundTime, p->runTime, p->waitTime);
+        if(p->state == RUNNABLE) {
+          cprintf("%s \t %d \t RUNNABLE \t %d \t\t %d \t\t %d\n", p->name, p->pid, p->priority, p->time, p->remainTime);
+          cprintf("turn:%d\trun:%d\twait:%d\n", p->turnAroundTime, p->runTime, p->waitTime);
+        }
       }
     }
 
     else if(op == 2) {
-      for(p = ptable.rq; p < &ptable.rq[NPROC]; p++) {
-        cprintf("%s \t %d \t SLEEPING \t %d \t\t %d \t\t %d\n", p->name, p->pid, p->priority, p->time, p->remainTime);
-        cprintf("turn:%d\trun:%d\twait:%d\n", p->turnAroundTime, p->runTime, p->waitTime);
+      for(p = ptable.sq; p < &ptable.sq[NPROC]; p++) {
+        if(p->state == SLEEPING) {
+          cprintf("%s \t %d \t SLEEPING \t %d \t\t %d \t\t %d\n", p->name, p->pid, p->priority, p->time, p->remainTime);
+          cprintf("turn:%d\trun:%d\twait:%d\n", p->turnAroundTime, p->runTime, p->waitTime);
+        }
       }
     }
     
