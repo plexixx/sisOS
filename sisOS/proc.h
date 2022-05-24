@@ -9,12 +9,12 @@ struct context {
 
 //进程状态
 enum procstate {
-	UNUSED,      // 未使用，空闲状态
-	ALLOCATED,   // 分配PCB，但未分配足够资源
-	SLEEPING,    // 进程休眠，等待IO或其他事件完成
-	RUNNABLE,    // 进程获得足够资源，可以上CPU执行
-	RUNNING,     // 进程正在CPU上执行
-	ZOMBIE       // 进程执行结束，等待回收资源
+	UNUSED,       // 未使用，空闲状态
+	NEW,          // 分配PCB，但未分配足够资源
+	WAITING,      // 进程休眠，等待IO或其他事件完成
+	READY,        // 进程获得足够资源，可以上CPU执行
+	RUNNING,      // 进程正在CPU上执行
+	TERMINATED    // 进程执行结束，等待回收资源
 };
 
 struct proc {

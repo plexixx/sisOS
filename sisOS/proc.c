@@ -10,8 +10,8 @@
 struct {
     struct spinlock lock;
     struct proc proc[NPROC];
-    struct proc rq[NPROC]; // Queue of RUNNABLE processes.
-    struct proc sq[NPROC]; // Queue of SLEEPING processes.
+    struct proc rq[NPROC]; // Queue of READY processes.
+    struct proc sq[NPROC]; // Queue of WAITING processes.
 } ptable;
 
 static struct proc* initproc;
@@ -68,7 +68,7 @@ struct proc*
     return p;
 }
 
-void addRunnable(struct proc* np) {
+void addREADY(struct proc* np) {
     int i;
     for (i = 0; i < NPROC; i++) {
         if (ptable.rq[i].state == UNUSED) {
@@ -90,7 +90,7 @@ void addSleep(struct proc* np) {
     }
 }
 
-void delRunnable(struct proc* p) {
+void delREADY(struct proc* p) {
     int i;
     for (i = 0; i < NPROC; i++) {
         if (ptable.rq[i].pid == p->pid) {
@@ -127,7 +127,7 @@ allocproc(void)
     return 0;
 
 found:
-    p->state = ALLOCATED;
+    p->state = NEW;
     p->pid = nextpid++;
     p->priority = 15;
     p->waitTime = 0;
@@ -194,8 +194,8 @@ userinit(void)
 
     acquire(&ptable.lock);
 
-    p->state = RUNNABLE;
-    addRunnable(p); //将其加入Runnable队列中
+    p->state = READY;
+    addREADY(p); //将其加入READY队列中
 
     release(&ptable.lock);
 }
@@ -259,9 +259,9 @@ fork(void)
 
     acquire(&ptable.lock);
 
-    np->state = RUNNABLE;
+    np->state = READY;
 
-    addRunnable(np);
+    addREADY(np);
 
     release(&ptable.lock);
 
@@ -294,22 +294,22 @@ exit(void)
 
     acquire(&ptable.lock);
 
-    // Parent might be sleeping in wait().
+    // Parent might be WAITING in wait().
     wakeup1(curproc->parent);
 
     // Pass abandoned children to init.
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
         if (p->parent == curproc) {
             p->parent = initproc;
-            if (p->state == ZOMBIE)
+            if (p->state == TERMINATED)
                 wakeup1(initproc);
         }
     }
 
     // Jump into the scheduler, never to return.
-    curproc->state = ZOMBIE;
+    curproc->state = TERMINATED;
     sched();
-    panic("zombie exit");
+    panic("TERMINATED exit");
 }
 
 // 等待子进程退出
@@ -328,7 +328,7 @@ wait(void)
             if (p->parent != curproc)
                 continue;
             havekids = 1;
-            if (p->state == ZOMBIE) {
+            if (p->state == TERMINATED) {
                 // Found one.
                 pid = p->pid;
                 kfree(p->kstack);
@@ -378,14 +378,14 @@ scheduler(void)
                     cprintf("Priority scheduling.\n");
                     sche_change = 0;
                 }
-                if (p->state != RUNNABLE)
+                if (p->state != READY)
                     continue;
 
                 //遍历一次进程数组，找出优先级最高的进程
                 for (tempProcess = ptable.proc; tempProcess < &ptable.proc[NPROC]; tempProcess++)
                 {
                     //遍历等待或者运行状态的进程，如果选中等待状态的，就进行进程切换；如果选中运行状态的，当前运行进程继续执行
-                    if (tempProcess->state != RUNNABLE || tempProcess->state != RUNNING)
+                    if (tempProcess->state != READY || tempProcess->state != RUNNING)
                         continue;
                     //priority越小，优先级越高
                     if (tempProcess->priority < p->priority)
@@ -408,7 +408,7 @@ scheduler(void)
                 //p进程被选中执行，则其他进程将要等待，遍历进程数组找出除p进程之外在运行或等待的进程，等待次数加一
                 for (tempProcess = ptable.proc; tempProcess < &ptable.proc[NPROC]; tempProcess++) {
                     //选出除p进程之外在等待或运行的进程
-                    if ((tempProcess->state != RUNNABLE && tempProcess->state != RUNNING)
+                    if ((tempProcess->state != READY && tempProcess->state != RUNNING)
                         || tempProcess->pid == p->pid)
                         continue;
                     tempProcess->waitTime++;
@@ -437,19 +437,19 @@ scheduler(void)
                 {
                     if (!p->killed) {
                         cprintf("kill process %d.\n", p->pid);
-                        p->state = ZOMBIE;
+                        p->state = TERMINATED;
                         p->killed = 1;
                     }
                     continue;
                 }
-                if (p->state != RUNNABLE)
+                if (p->state != READY)
                     continue;
 
                 //遍历一次进程数组，找出剩余运行时间最短的进程
                 for (tempProcess = ptable.proc; tempProcess < &ptable.proc[NPROC]; tempProcess++)
                 {
                     //遍历等待或者运行状态的进程，如果选中等待状态的，就进行进程切换；如果选中运行状态的，当前运行进程继续执行
-                    if (tempProcess->state != RUNNABLE || tempProcess->state != RUNNING || !tempProcess->remainTime)
+                    if (tempProcess->state != READY || tempProcess->state != RUNNING || !tempProcess->remainTime)
                         continue;
                     //time越小，越先运行
                     if (tempProcess->remainTime < p->remainTime)
@@ -483,13 +483,13 @@ scheduler(void)
                 {
                     if (!p->killed) {
                         cprintf("kill process %d.\n", p->pid);
-                        p->state = ZOMBIE;
+                        p->state = TERMINATED;
                         p->killed = 1;
                     }
                     continue;
                 }
 
-                if (p->state != RUNNABLE)
+                if (p->state != READY)
                     continue;
 
 /*            if (p->name[0]=='m' && p->name[1] == 'y' && p->name[2] == 'f' && p->name[3] == 'o' && p->name[4] == 'r' && p->name[5] == 'k')
@@ -515,7 +515,7 @@ scheduler(void)
             c->proc = p;  // 此CPU准备运行p
             switchuvm(p); // 切换p进程页表
             p->state = RUNNING;
-            delRunnable(p);
+            delREADY(p);
             swtch(&(c->scheduler), p->context);
             switchkvm();  // 回来之后切换成内核页表
             c->proc = 0;  // 上个进程运行以后，下CPU，此时CPU上没进程运行
@@ -550,8 +550,8 @@ yield(void)
 {
     acquire(&ptable.lock);  //DOC: yieldlock
     struct proc* p = myproc();
-    p->state = RUNNABLE;
-    addRunnable(p);
+    p->state = READY;
+    addREADY(p);
     sched();
     release(&ptable.lock);
 }
@@ -600,9 +600,9 @@ sleep(void* chan, struct spinlock* lk)
     }
     // Go to sleep.
     p->chan = chan;
-    p->state = SLEEPING;
+    p->state = WAITING;
 
-    delRunnable(p);
+    delREADY(p);
     addSleep(p);
 
     sched();
@@ -625,10 +625,10 @@ wakeup1(void* chan)
     //cprintf("wakeup!\n");
 
     for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
-        if (p->state == SLEEPING && p->chan == chan) {
+        if (p->state == WAITING && p->chan == chan) {
             delSleep(p);
-            addRunnable(p);
-            p->state = RUNNABLE;
+            addREADY(p);
+            p->state = READY;
         }
     }
 
@@ -655,10 +655,10 @@ kill(int pid)
         if (p->pid == pid) {
             p->killed = 1;
             // Wake process from sleep if necessary.
-            if (p->state == SLEEPING) {
-                p->state = RUNNABLE;
+            if (p->state == WAITING) {
+                p->state = READY;
                 delSleep(p);
-                addRunnable(p);
+                addREADY(p);
             }
             release(&ptable.lock);
             return 0;
@@ -674,11 +674,11 @@ procdump(void)
 {
     static char* states[] = {
     [UNUSED] "unused",
-    [ALLOCATED] "allocated",
-    [SLEEPING]  "sleep ",
-    [RUNNABLE]  "runble",
+    [NEW] "new",
+    [WAITING]  "sleep ",
+    [READY]  "runble",
     [RUNNING]   "run   ",
-    [ZOMBIE]    "zombie"
+    [TERMINATED]    "TERMINATED"
     };
     int i;
     struct proc* p;
@@ -693,7 +693,7 @@ procdump(void)
         else
             state = "???";
         cprintf("%d %s %s", p->pid, state, p->name);
-        if (p->state == SLEEPING) {
+        if (p->state == WAITING) {
             getcallerpcs((uint*)p->context->ebp + 2, pc);
             for (i = 0; i < 10 && pc[i] != 0; i++)
                 cprintf(" %p", pc[i]);
@@ -729,9 +729,9 @@ showProcess(int op)
     if (op == 0) {
         for (p = ptable.proc; p < &ptable.proc[NPROC]; p++)
         {
-            if (p->state == SLEEPING)
+            if (p->state == WAITING)
             {
-                cprintf("%s \t %d \t SLEEPING \t %d \t\t %d \t\t %d\n", p->name, p->pid, p->priority, p->time, p->remainTime);
+                cprintf("%s \t %d \t WAITING \t %d \t\t %d \t\t %d\n", p->name, p->pid, p->priority, p->time, p->remainTime);
                 cprintf("turn:%d\trun:%d\twait:%d\n", p->turnAroundTime, p->runTime, p->waitTime);
             }
             else if (p->state == RUNNING)
@@ -739,9 +739,9 @@ showProcess(int op)
                 cprintf("%s \t %d \t RUNNING  \t %d \t\t %d \t\t %d\n", p->name, p->pid, p->priority, p->time, p->remainTime);
                 cprintf("turn:%d\trun:%d\twait:%d\n", p->turnAroundTime, p->runTime, p->waitTime);
             }
-            else if (p->state == RUNNABLE)
+            else if (p->state == READY)
             {
-                cprintf("%s \t %d \t RUNNABLE \t %d \t\t %d \t\t %d\n", p->name, p->pid, p->priority, p->time, p->remainTime);
+                cprintf("%s \t %d \t READY \t %d \t\t %d \t\t %d\n", p->name, p->pid, p->priority, p->time, p->remainTime);
                 cprintf("turn:%d\trun:%d\twait:%d\n", p->turnAroundTime, p->runTime, p->waitTime);
             }
         }
@@ -749,8 +749,8 @@ showProcess(int op)
 
     else if (op == 1) {
         for (p = ptable.rq; p < &ptable.rq[NPROC]; p++) {
-            if (p->state == RUNNABLE) {
-                cprintf("%s \t %d \t RUNNABLE \t %d \t\t %d \t\t %d\n", p->name, p->pid, p->priority, p->time, p->remainTime);
+            if (p->state == READY) {
+                cprintf("%s \t %d \t READY \t %d \t\t %d \t\t %d\n", p->name, p->pid, p->priority, p->time, p->remainTime);
                 cprintf("turn:%d\trun:%d\twait:%d\n", p->turnAroundTime, p->runTime, p->waitTime);
             }
         }
@@ -758,8 +758,8 @@ showProcess(int op)
 
     else if (op == 2) {
         for (p = ptable.sq; p < &ptable.sq[NPROC]; p++) {
-            if (p->state == SLEEPING) {
-                cprintf("%s \t %d \t SLEEPING \t %d \t\t %d \t\t %d\n", p->name, p->pid, p->priority, p->time, p->remainTime);
+            if (p->state == WAITING) {
+                cprintf("%s \t %d \t WAITING \t %d \t\t %d \t\t %d\n", p->name, p->pid, p->priority, p->time, p->remainTime);
                 cprintf("turn:%d\trun:%d\twait:%d\n", p->turnAroundTime, p->runTime, p->waitTime);
             }
         }
