@@ -193,6 +193,8 @@ UPROGS=\
 	_chpr\
 	_myfork\
 	_pingpong\
+	_chprTime\
+	_chSche\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
