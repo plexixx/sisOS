@@ -1,18 +1,3 @@
-// Per-CPU state
-struct cpu {
-  uchar apicid;                // Local APIC ID
-  struct context *scheduler;   // swtch() here to enter scheduler
-  struct taskstate ts;         // Used by x86 to find stack for interrupt
-  struct segdesc gdt[NSEGS];   // x86 global descriptor table
-  volatile uint started;       // Has the CPU started?
-  int ncli;                    // Depth of pushcli nesting.
-  int intena;                  // Were interrupts enabled before pushcli?
-  struct proc *proc;           // The process running on this cpu or null
-};
-
-extern struct cpu cpus[NCPU];
-extern int ncpu;
-
 //PAGEBREAK: 17
 // Saved registers for kernel context switches.
 // Don't need to save all the segment registers (%cs, etc),
@@ -32,7 +17,7 @@ struct context {
   uint eip;
 };
 
-enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
+enum procstate { UNUSED, ALLOCATED, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 
 // Per-process state
 struct proc {
@@ -49,6 +34,14 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
+  int priority;
+  int waitTime;
+  int runTime;
+  int turnAroundTime;
+  int currentWait;
+  int currentRun;
+  int time; //提前设置好的总的运行时间 
+  int remainTime; //剩余运行时间 
 };
 
 // Process memory is laid out contiguously, low addresses first:
@@ -56,3 +49,18 @@ struct proc {
 //   original data and bss
 //   fixed-size stack
 //   expandable heap
+
+// Per-CPU state
+struct cpu {
+  uchar apicid;                // Local APIC ID
+  struct context *scheduler;   // swtch() here to enter scheduler
+  struct taskstate ts;         // Used by x86 to find stack for interrupt
+  struct segdesc gdt[NSEGS];   // x86 global descriptor table
+  volatile uint started;       // Has the CPU started?
+  int ncli;                    // Depth of pushcli nesting.
+  int intena;                  // Were interrupts enabled before pushcli?
+  struct proc *proc;           // The process running on this cpu or null
+};
+
+extern struct cpu cpus[NCPU];
+extern int ncpu;
