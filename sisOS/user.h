@@ -29,7 +29,7 @@ int uptime(void);
 int fmode(int fd, struct mode*);
 int fmodif(int fd, int rank);
 int changePriority(int, int);
-int showProcess(void);
+int showProcess(int);
 int changeTime(int, int);
 int changeSche(int);
 

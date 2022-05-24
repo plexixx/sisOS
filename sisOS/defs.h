@@ -129,7 +129,7 @@ void            addSleep(struct proc*);
 void            delRunnable(struct proc*);
 void            delSleep(struct proc*);
 int             changePriority(int, int);
-int             showProcess(void);
+int             showProcess(int);
 int             changeTime(int, int);
 int             changeSche(int);
 

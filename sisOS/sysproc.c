@@ -98,7 +98,9 @@ int sys_changePriority(void) {
 }
 
 int sys_showProcess(void) {
-    return showProcess();
+    int op;
+    if(argint(0, &op) < 0) return -1;
+    return showProcess(op);
 }
 
 int sys_changeTime(void) {
