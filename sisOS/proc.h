@@ -1,65 +1,58 @@
-//PAGEBREAK: 17
-// Saved registers for kernel context switches.
-// Don't need to save all the segment registers (%cs, etc),
-// because they are constant across kernel contexts.
-// Don't need to save %eax, %ecx, %edx, because the
-// x86 convention is that the caller has saved them.
-// Contexts are stored at the bottom of the stack they
-// describe; the stack pointer is the address of the context.
-// The layout of the context matches the layout of the stack in swtch.S
-// at the "Switch stacks" comment. Switch doesn't save eip explicitly,
-// but it is on the stack and allocproc() manipulates it.
+//切换上下文：被调用者保存寄存器
 struct context {
-  uint edi;
-  uint esi;
-  uint ebx;
-  uint ebp;
-  uint eip;
+	uint edi;   // 目标索引寄存器
+	uint esi;   // 源索引寄存器
+	uint ebx;   // 基地址寄存器
+	uint ebp;   // 基址指针
+	uint eip;   // 指令寄存器，返回地址
 };
 
-enum procstate { UNUSED, ALLOCATED, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
+//进程状态
+enum procstate {
+	UNUSED,      // 未使用，空闲状态
+	ALLOCATED,   // 分配PCB，但未分配足够资源
+	SLEEPING,    // 进程休眠，等待IO或其他事件完成
+	RUNNABLE,    // 进程获得足够资源，可以上CPU执行
+	RUNNING,     // 进程正在CPU上执行
+	ZOMBIE       // 进程执行结束，等待回收资源
+};
 
-// Per-process state
 struct proc {
-  uint sz;                     // Size of process memory (bytes)
-  pde_t* pgdir;                // Page table
-  char *kstack;                // Bottom of kernel stack for this process
-  enum procstate state;        // Process state
-  int pid;                     // Process ID
-  struct proc *parent;         // Parent process
-  struct trapframe *tf;        // Trap frame for current syscall
-  struct context *context;     // swtch() here to run process
-  void *chan;                  // If non-zero, sleeping on chan
-  int killed;                  // If non-zero, have been killed
-  struct file *ofile[NOFILE];  // Open files
-  struct inode *cwd;           // Current directory
-  char name[16];               // Process name (debugging)
-  int priority;
-  int waitTime;
-  int runTime;
-  int turnAroundTime;
-  int currentWait;
-  int currentRun;
-  int time; //提前设置好的总的运行时间 
-  int remainTime; //剩余运行时间 
+	uint sz;                     // 进程所占内存大小 (bytes)
+	pde_t* pgdir;                // 页表
+	char* kstack;                // 内核栈位置
+	enum procstate state;        // 进程状态
+	int pid;                     // Process ID
+	struct proc* parent;         // 父进程指针
+	struct trapframe* tf;        // 中断栈帧指针
+	struct context* context;     // 上下文指针
+	void* chan;                  // 进程在channel上睡眠
+	int killed;                  // 进程是否被杀死
+	struct file* ofile[NOFILE];  // 打开文件描述符表
+	struct inode* cwd;           // 当前工作目录
+	char name[16];               // 进程名
+	int priority;
+	int createTime;
+	int readyTime;
+	int runTime;
+	int finishTime;
+	int runTotal;
+	int waitTotal;
+	int currentWait;
+	int currentRun;
+	int time;                    // 提前设置好的总的运行时间 
+	int remainTime;              // 剩余运行时间 
 };
 
-// Process memory is laid out contiguously, low addresses first:
-//   text
-//   original data and bss
-//   fixed-size stack
-//   expandable heap
-
-// Per-CPU state
 struct cpu {
-  uchar apicid;                // Local APIC ID
-  struct context *scheduler;   // swtch() here to enter scheduler
-  struct taskstate ts;         // Used by x86 to find stack for interrupt
-  struct segdesc gdt[NSEGS];   // x86 global descriptor table
-  volatile uint started;       // Has the CPU started?
-  int ncli;                    // Depth of pushcli nesting.
-  int intena;                  // Were interrupts enabled before pushcli?
-  struct proc *proc;           // The process running on this cpu or null
+	uchar apicid;                // Local APIC ID
+	struct context* scheduler;   // 调度器上下文
+	struct taskstate ts;         // 任务状态栈
+	struct segdesc gdt[NSEGS];   // 全局描述符
+	volatile uint started;       // CPU是否启动
+	int ncli;                    // 关中断深度
+	int intena;                  // CPU是否允许中断
+	struct proc* proc;           // 运行在该CPU上的进程指针
 };
 
 extern struct cpu cpus[NCPU];
