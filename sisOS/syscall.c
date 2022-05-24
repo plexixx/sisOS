@@ -46,11 +46,11 @@ fetchstr(uint addr, char **pp)
 }
 
 // Fetch the nth 32-bit system call argument.
-// »ñÈ¡ÏµÍ³µ÷ÓÃµÄµÚn¸öintÐÍµÄ²ÎÊý£¬´æµ½ipÕâ¸öÎ»ÖÃ
+// ï¿½ï¿½È¡ÏµÍ³ï¿½ï¿½ï¿½ÃµÄµï¿½nï¿½ï¿½intï¿½ÍµÄ²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½æµ½ipï¿½ï¿½ï¿½Î»ï¿½ï¿½
 int
 argint(int n, int *ip)
 {
-    //Ô­Õ»ÖÐ»ñÈ¡n¸öintÐÍ²ÎÊý£¬¼Ó4ÊÇÌø¹ý·µ»ØµØÖ·µÄ4×Ö½Ú
+    //Ô­Õ»ï¿½Ð»ï¿½È¡nï¿½ï¿½intï¿½Í²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½4ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Øµï¿½Ö·ï¿½ï¿½4ï¿½Ö½ï¿½
   return fetchint((myproc()->tf->esp) + 4 + 4*n, ip);
 }
 
@@ -107,8 +107,12 @@ extern int sys_write(void);
 extern int sys_uptime(void);
 extern int sys_fmode(void);
 extern int sys_fmodif(void);
+extern int sys_changePriority(void);
+extern int sys_showProcess(void);
+extern int sys_changeTime(void);
+extern int sys_changeSche(void);
 
-// ÔÚÏÂÃæµÄº¯ÊýÖ¸ÕëÊý×é£¬½«ÓÒ±ßº¯ÊýÃûÌîÐ´µ½×ó±ßÏà¶ÔÓ¦µÄË÷ÒýÎ»ÖÃ
+// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Äºï¿½ï¿½ï¿½Ö¸ï¿½ï¿½ï¿½ï¿½ï¿½é£¬ï¿½ï¿½ï¿½Ò±ßºï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î»ï¿½ï¿½
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
 [SYS_exit]    sys_exit,
@@ -133,17 +137,21 @@ static int (*syscalls[])(void) = {
 [SYS_close]   sys_close,
 [SYS_fmode]   sys_fmode, 
 [SYS_fmodif]  sys_fmodif, 
+[SYS_changePriority] sys_changePriority,
+[SYS_showProcess] sys_showProcess,
+[SYS_changeTime] sys_changeTime,
+[SYS_changeSche] sys_changeSche,
 };
 
 void
 syscall(void)
 {
   int num;
-  struct proc *curproc = myproc();  //»ñÈ¡µ±Ç°½ø³ÌµÄPCB
+  struct proc *curproc = myproc();  //ï¿½ï¿½È¡ï¿½ï¿½Ç°ï¿½ï¿½ï¿½Ìµï¿½PCB
 
-  num = curproc->tf->eax;   // »ñÈ¡ÏµÍ³µ÷ÓÃºÅ
+  num = curproc->tf->eax;   // ï¿½ï¿½È¡ÏµÍ³ï¿½ï¿½ï¿½Ãºï¿½
   if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {
-      // µ÷ÓÃÏàÓ¦µÄÏµÍ³µ÷ÓÃ´¦Àíº¯Êý£¬·µ»ØÖµ¸³¸øeax
+      // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½ÏµÍ³ï¿½ï¿½ï¿½Ã´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½ï¿½ï¿½eax
     curproc->tf->eax = syscalls[num]();
   } else {
     cprintf("%d %s: unknown sys call %d\n",

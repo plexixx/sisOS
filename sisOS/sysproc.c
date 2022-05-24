@@ -89,3 +89,27 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+int sys_changePriority(void) {
+    int pid, priority;
+    if(argint(0, &pid) < 0) return -1;
+    if(argint(1, &priority) < 0) return -1;
+    return changePriority(pid, priority);
+}
+
+int sys_showProcess(void) {
+    return showProcess();
+}
+
+int sys_changeTime(void) {
+    int pid, time;
+    if (argint(0, &pid) < 0) return -1;
+    if (argint(1, &time) < 0) return -1;
+    return changeTime(pid, time);
+}
+
+int sys_changeSche(void) {
+    int tempSche;
+    if (argint(0, &tempSche) < 0) return -1;
+    return changeSche(tempSche);
+}

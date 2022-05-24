@@ -124,6 +124,14 @@ void            userinit(void);
 int             wait(void);
 void            wakeup(void*);
 void            yield(void);
+void            addRunnable(struct proc*);
+void            addSleep(struct proc*);
+void            delRunnable(struct proc*);
+void            delSleep(struct proc*);
+int             changePriority(int, int);
+int             showProcess(void);
+int             changeTime(int, int);
+int             changeSche(int);
 
 // swtch.S
 void            swtch(struct context**, struct context*);

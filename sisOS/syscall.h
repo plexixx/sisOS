@@ -1,4 +1,4 @@
-// System call numbers 系统调用号
+// System call numbers 系统锟斤拷锟矫猴拷
 #define SYS_fork     1
 #define SYS_exit     2
 #define SYS_wait     3
@@ -22,3 +22,7 @@
 #define SYS_close   21
 #define SYS_fmode   22
 #define SYS_fmodif  23
+#define SYS_changePriority 24
+#define SYS_showProcess 25
+#define SYS_changeTime 26
+#define SYS_changeSche 27

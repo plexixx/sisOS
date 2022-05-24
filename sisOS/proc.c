@@ -74,10 +74,10 @@ myproc(void) {
 
 void addRunnable(struct proc *np) {
   struct proc *p;
-  cprintf("addRunnalbe!\n");
+  //cprintf("addRunnalbe!\n");
   for(p = ptable.rq; p < &ptable.rq[NPROC]; p++) {
     if(p->state == UNUSED) {
-      cprintf("addRunnalbe success!\n");
+      //cprintf("addRunnalbe success!\n");
       p = np;
       return;
     }
@@ -88,7 +88,7 @@ void addSleep(struct proc *np) {
   struct proc *p;
   for(p = ptable.sq; p < &ptable.sq[NPROC]; p++) {
     if(p->state == UNUSED) {
-      cprintf("addSleep success!\n");
+      //cprintf("addSleep success!\n");
       p = np;
       return;
     }
@@ -97,10 +97,10 @@ void addSleep(struct proc *np) {
 
 void delRunnable(struct proc *p) {
   struct proc *rp;
-  cprintf("delRunnalbe!\n");
+  //cprintf("delRunnalbe!\n");
   for(rp = ptable.rq; rp < &ptable.rq[NPROC]; rp++) {
     if(rp == p) {
-      cprintf("delRunnalbe success!\n");
+      //cprintf("delRunnalbe success!\n");
       rp->state = UNUSED;
       break;
     }
@@ -111,7 +111,7 @@ void delSleep(struct proc *p) {
   struct proc *sp;
   for(sp = ptable.sq; sp < &ptable.sq[NPROC]; sp++) {
     if(sp == p) {
-      cprintf("delSleep success!\n");
+      //cprintf("delSleep success!\n");
       sp->state = UNUSED;
       break;
     }
@@ -635,7 +635,7 @@ static void
 wakeup1(void *chan)
 {
   struct proc *p;
-  cprintf("wakeup!\n");
+  //cprintf("wakeup!\n");
 
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
     if(p->state == SLEEPING && p->chan == chan){
@@ -718,26 +718,6 @@ procdump(void)
     }
     cprintf("\n");
   }
-}
-
-int 
-cps(void)
-{
-  struct proc *p;
-  sti();	// Enable interrupts
-  acquire(&ptable.lock);
-  cprintf("name \t pid \t state \t \t\n");
-  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-  {
-    if(p->state == SLEEPING)
-    cprintf("%s \t %d \t SLEEPING\n", p->name, p->pid);
-    else if(p->state == RUNNING)
-    cprintf("%s \t %d \t RUNNING\n", p->name, p->pid);
-    else if(p->state == RUNNABLE)
-    cprintf("%s \t %d \t RUNNABLE\n", p->name, p->pid);
-  }
-  release(&ptable.lock);
-  return 22;
 }
 
 int 

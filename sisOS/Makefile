@@ -182,13 +182,17 @@ UPROGS=\
 	_wc\
 	_zombie\
 	_fmd\
-        _find\
+    _find\
 	_mv\
 	_touch\
 	_head\
 	_tail\
 	_splice\
 	_rename\
+	_ps\
+	_chpr\
+	_myfork\
+	_pingpong\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
